@@ -8,34 +8,61 @@
 // });
 
 const http = require('node:http');
-
+const fs = require('fs');
 const hostname = '127.0.0.1';
 const port = 4000;
 
 const server = http.createServer((req, res) => {
-  console.log(req.url , req.method , req.headers)
+  let method = req.method;
   res.statusCode = 200;
   res.setHeader('Content-Type', 'text/html');
-  // res.write('<html>')
-  // res.write('<head><title> My first page</title></head> ')
-  // res.write('<body><h1> hello from my node js server</h1></body> ')
-  // res.write('</html>')
-  // res.end('<h1>Rajat</h1>');
-  if(req.url==='/'){
-    res.end('<h1>started server</h1>')
+
+  if (req.url === '/') {
+    res.write('<html>');
+    res.write('<head><title>Enter Message</title></head>');
+    res.write('<body><form action="/message" method="POST">');
+    res.write('<input type="text" name="message">');
+    res.write('<button type="submit">Send</button>');
+    res.write('</form></body>');
+    res.write('</html>');
+    return res.end();
   }
-  else if(req.url=='/home'){
-    res.end('<h1>welcome home</h1>')
-    
-  }else if(req.url=='/about'){
-    res.end('<h1>welcome to my About us page</h1>')
-  }else if(req.url=='/node'){
-    res.end('<h1>welcome to my Node js project</h1>')
-  }else{
-    res.statusCode=404;
-    res.end('<h1>404 Not Found</h1>')
+
+  if (req.url === '/message' && method === 'POST') {
+    const body = [];
+    req.on('data', (chunk) => {
+      body.push(chunk);
+    });
+
+    req.on('end', () => {
+      const parsedBody = Buffer.concat(body).toString();
+      const message = parsedBody.split('=')[1];
+
+      // Writing to file with error handling
+      fs.writeFile('message.txt',message, (err) => {
+        if (err) {
+          console.error('Error writing to file:', err);
+          res.statusCode = 500;
+          res.end('<h1>Server Error</h1>');
+          return;
+        }
+
+        // Redirect after successful file write
+        res.statusCode = 302;
+        res.setHeader('Location', '/');
+        return res.end();
+      });
+    });
+  } else if (req.url === '/home') {
+    res.end('<h1>Welcome home</h1>');
+  } else if (req.url === '/about') {
+    res.end('<h1>Welcome to my About Us page</h1>');
+  } else if (req.url === '/node') {
+    res.end('<h1>Welcome to my Node.js project</h1>');
+  } else {
+    res.statusCode = 404;
+    res.end('<h1>404 Not Found</h1>');
   }
-  //process.exit()
 });
 
 server.listen(port, hostname, () => {
